@@ -23,8 +23,9 @@ $params = json_decode($json); //DECODIFICA EL JSON Y LO GUARDA EN UNA VARIABLE
 
 $pdo = new Conexion(); //ESTABLECE CONEXION CON UNA NUEVA INSTANCIA
 
-
-//OBTENER TODOS LOS DATOS Y OBTENER UN SOLO DATO POR ID
+//===========================================================
+//** OBTENER TODOS LOS DATOS Y OBTENER UN SOLO DATO POR ID */
+//===========================================================
 
 if($_SERVER['REQUEST_METHOD'] == 'GET'){
    
@@ -51,8 +52,9 @@ if($_SERVER['REQUEST_METHOD'] == 'GET'){
         
     }
 }
-
-//REGISTRAR DATOS
+//=====================
+//** REGISTRAR DATOS */
+//=====================
  
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
@@ -109,9 +111,40 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
         }
 }
   
+//=========================
+//** Actualizar Registro */ 
+//=========================
 
-// Actualizar Registro
 if($_SERVER['REQUEST_METHOD'] == 'PUT'){
+
+
+     //verificar si se proporciona un id en la url
+    if(!isset($_GET['id'])){
+       header("HTTP/1.1 400 Bad Request");
+       echo json_encode(['mensaje'=>'ID no proporcionado en la solicitud'], JSON_UNESCAPED_UNICODE);
+       exit; 
+    }
+    // obtener los valores obligatorios de los campos
+    $nombre = $params ->nombre;
+    $telefono = $params ->telefono;
+    $email = $params ->email;
+
+   // Validar campos
+   if (empty($nombre) || strlen($nombre) < 4){
+       header("HTTP/1.1 400 Bad Request");
+       echo json_encode(['mensaje' => 'El nombre debe contener al menos 4 caracteres'], JSON_UNESCAPED_UNICODE);
+       exit;
+   }
+   if (empty($telefono) || strlen($telefono) < 6){
+       header("HTTP/1.1 400 Bad Request");
+       echo json_encode(['mensaje' => 'El telefono debe contener al menos 6 caracteres'], JSON_UNESCAPED_UNICODE);
+       exit;
+   }
+   if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)){
+       header("HTTP/1.1 400 Bad Request");
+       echo json_encode(['mensaje' => 'El email NO tiene formato válido'], JSON_UNESCAPED_UNICODE);
+       exit;
+   }
 
     $sql = "UPDATE contacto SET nombre=:nombre, telefono=:telefono, email =:email, imagen=:imagen WHERE id=:id";
     $stmt = $pdo->prepare($sql);
@@ -126,4 +159,44 @@ if($_SERVER['REQUEST_METHOD'] == 'PUT'){
     echo json_encode(['mensaje'=>'Registro se actualizó con éxito'], JSON_UNESCAPED_UNICODE);
     exit;
 
+}
+//======================
+//**Eliminar Registro */
+//======================
+
+if($_SERVER['REQUEST_METHOD'] == 'DELETE'){
+
+    //verificar si se proporciona un id en la url
+    if(!isset($_GET['id'])){
+        header("HTTP/1.1 400 Bad Request");
+        echo json_encode(['mensaje'=>'ID no proporcionado en la solicitud'], JSON_UNESCAPED_UNICODE);
+        exit; 
+    }
+
+    //Obtener el valor del parámetro 'id' de la URL
+    $id = $_GET['id'];
+
+    //Verificar si el registro con el ID propocionado existe en la DB
+    $sql_check = "SELECT COUNT(*) FROM contacto WHERE id=:id"; 
+    $stmt_check = $pdo ->prepare($sql_check);
+    $stmt_check -> bindValue(':id', $id);
+    $stmt_check -> execute();
+    $registro_existe = $stmt_check->fetchColumn();
+
+    if($registro_existe == 0) {
+        header("HTTP/1.1 404 Not Found");
+        echo json_encode(['mensaje'=>'Registro no encontrado...'], JSON_UNESCAPED_UNICODE);
+        exit; 
+    }
+
+    //El registro existe, lo eliminamos
+
+    $sql = "DELETE FROM contacto WHERE id=:id";
+    $stmt = $pdo->prepare($sql);
+    $stmt -> bindValue(':id', $_GET['id']);
+    $stmt -> execute();
+
+    header("HTTP/1.1 200 OK");
+    echo json_encode(['mensaje'=>'Registro se eliminó con éxito'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
