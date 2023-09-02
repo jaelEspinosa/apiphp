@@ -9,12 +9,13 @@ $method = $_SERVER['REQUEST_METHOD'];
 if ($method == "OPTIONS") {
    
    header('Access-Control-Allow-Origin: *');
-   header("Access-Control-Allow-Headers: X-API-KEY,Origin,X-Requested-With, Content-Type, Accept,
-           Access-Control-Request-Method,Access-Request-Headers,Authorization");
+   header("Access-Control-Allow-Headers: X-API-KEY,Origin,X-Requested-With, Content-Type, Accept,Access-Control-Request-Method,Access-Request-Headers,Authorization");
    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
    header('content-type: application/json; charset=utf-8');
    header('HTTP/1.1 200 OK');
    die();
+
+
 }
 
 $json = file_get_contents('php://input'); //RECIBE LOS DATOS EN JSON DESDE ANGULAR
@@ -90,7 +91,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
      if ($checkStmt->fetch()) {
          // El correo electrónico ya existe en la base de datos, mostrar un mensaje de error
          header("HTTP/1.1 400 Bad Request");
-         echo json_encode(['mensaje' => 'Este email ya está en uso'], JSON_UNESCAPED_UNICODE);
+         echo json_encode(['mensaje' => 'Este email pertenece a otro contacto'], JSON_UNESCAPED_UNICODE);
          exit;
      }
 
@@ -106,10 +107,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
      
         if ($idPost){
             header("HTTP/1.1 200 OK");
-            echo json_encode(['mensaje'=>'Registro agregado con exito']);
+            echo json_encode(['msg'=>'Registro agregado con exito']);
             exit;
         }
 }
+
   
 //=========================
 //** Actualizar Registro */ 
@@ -124,6 +126,21 @@ if($_SERVER['REQUEST_METHOD'] == 'PUT'){
        echo json_encode(['mensaje'=>'ID no proporcionado en la solicitud'], JSON_UNESCAPED_UNICODE);
        exit; 
     }
+    // verificar que este id existe
+     $id = $_GET['id'];
+     $sql = "SELECT id FROM contacto WHERE id = :id";
+     $stmt = $pdo->prepare($sql);
+     $stmt->bindValue(':id', $id);
+     $stmt->execute();
+
+     if ($stmt->rowCount()=== 0) {
+        // El id no existe en la base de datos, mostrar un mensaje de error
+        header("HTTP/1.1 400 Bad Request");
+        echo json_encode(['mensaje' => 'No se encontro el contacto'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+
     // obtener los valores obligatorios de los campos
     $nombre = $params ->nombre;
     $telefono = $params ->telefono;
@@ -200,3 +217,11 @@ if($_SERVER['REQUEST_METHOD'] == 'DELETE'){
     echo json_encode(['mensaje'=>'Registro se eliminó con éxito'], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+//====================================================
+//** Si no entra en ningun metodo de los anteriores */
+//====================================================
+
+header("HTTP/1.1 400 Bad Request");
+echo json_encode(['mensaje'=>'Método no disponible'], JSON_UNESCAPED_UNICODE);
+exit; 

@@ -3,7 +3,7 @@
 class Conexion extends PDO
 {
     private $hostBd = 'localhost';
-    private $nombreBd = 'contacto_bd';
+    private $nombreBd = 'contacto_db';
     private $usuarioBd = 'root';
     private $passwordBd = '';
 
@@ -20,8 +20,7 @@ class Conexion extends PDO
         $this->passwordBd, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION)
 
        );
-
-
+       
 
     } catch (PDOException $e) {
         echo 'Error: ' . $e->getMessage();
